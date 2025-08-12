@@ -1,0 +1,32 @@
+# ==== STM32CubeIDE / GCC ====
+/Debug/
+/Release/
+/build/
+/out/
+
+# binários/artefatos de link
+*.elf
+*.map
+*.hex
+*.bin
+
+# objetos/dep (em qualquer subpasta)
+**/*.o
+**/*.d
+**/*.su
+**/*.lst
+
+# temporários/IDE
+*.log
+*.swp
+*.swo
+
+# workspace Eclipse fora do projeto
+/.metadata/
+
+# VS Code (se usar)
+/.vscode/
+
+# SO
+.DS_Store
+Thumbs.db
