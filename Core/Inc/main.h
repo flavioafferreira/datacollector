@@ -101,6 +101,11 @@ void Error_Handler(void);
 #define RESISTOR_VALUE 20000 	//RESISTOR VALUE IN OHMS
 #define NTC_TEMPERATURE_ADJUST 0 	//
 
+
+#define FATOR_A_NTC 1.18
+#define FATOR_B_NTC 1.93
+
+
 #define IMPULSE_LIMIT 75 // 50 cycles/sec  75 = 1.5sec
 
 //MEAN
@@ -114,9 +119,6 @@ void Error_Handler(void);
 
 #define POWER_ON OFF
 #define POWER_OFF ON
-
-
-#define FREQ_LIMIT 200 //if the Mains Frequency is above FREQ_LIMIT hz on startup will reset
 
 
 //#define PRINT_A //if defined detailed
@@ -156,7 +158,7 @@ typedef struct sensor_item_ {
   float vdda_real;
 } sensor_item;
 
-
+#define  FAST_TEST_MODE ON
 
 typedef struct queue_item_ {
   float temp;
@@ -171,7 +173,7 @@ typedef struct queue_item_ {
 #define HOUR_INITIAL 12
 #define MINUTE_INITIAL 00
 
-#define QUEUE_SIZE 48  // Tamanho máximo da fila, don't change it
+#define QUEUE_SIZE 240  // Tamanho máximo da fila, don't change it
 typedef struct {
 	queue_item buffer[QUEUE_SIZE]; // Array de elementos do tipo string_tcp
     int head;                      // Índice do primeiro elemento da fila

@@ -195,8 +195,11 @@ void EXTI4_15_IRQHandler(void)
   {
     LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12);
     /* USER CODE BEGIN LL_EXTI_LINE_12_RISING */
-    print_memory=ON;
-    it_ready=OFF;
+    if (it_ready == ON){
+     LL_EXTI_DisableIT_0_31(LL_EXTI_LINE_12); // evita bounce/reentrância
+     print_memory=ON;
+     it_ready=OFF;
+    }
     /* USER CODE END LL_EXTI_LINE_12_RISING */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */

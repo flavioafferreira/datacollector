@@ -113,8 +113,8 @@ static uint16_t vref_raw,temp_raw,vdda_raw,ch8_raw;
 flash_st flash_variable;
 uint8_t calibration_completed=OFF;
 uint32_t ext_cnt=0;
-uint8_t print_memory=OFF;
-uint8_t it_ready=ON;
+volatile uint8_t print_memory=OFF;
+volatile uint8_t it_ready=ON;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -453,6 +453,7 @@ sensor_item temperature_level_control(void){
   	//relay=relay_on_off(relay_present_status);
 
     data.temp=trimmed_mean(temp, QUANT_DATA, TRIM_PERCENTAGE);
+    data.temp=FATOR_A_NTC*data.temp+FATOR_B_NTC;
     data.vdda_real=vdda;
     return data;
 }
@@ -577,7 +578,7 @@ void button_pressed_test(void){
 
 }
 
-void Enter_Stop_Mode(void)
+void Enter_Stop_Mode_old(void)
 {
     // Desliga SysTick (opcional se não usar)
     SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
@@ -601,6 +602,40 @@ void Enter_Stop_Mode(void)
     MX_USART1_UART_Init();
     ADC_Init();
 
+}
+
+
+void Enter_Stop_Mode(void)
+{
+    // garantir UART ociosa
+    while (!LL_USART_IsActiveFlag_TC(USART1)) {}
+
+    // Desliga SysTick (se não usa delays HAL enquanto dorme)
+    SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+
+    // Desliga periféricos que você vai reinicializar depois
+    LL_USART_Disable(USART1);
+    LL_ADC_Disable(ADC1);
+    LL_DBGMCU_DisableDBGStopMode();
+
+    // LIMPA quaisquer pendências que acordariam imediatamente
+    LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12); // botão
+    LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_19); // RTC ALARM
+
+    // Entra em STOP0
+    LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
+    LL_LPM_EnableDeepSleep();
+    __WFI();
+
+    // Ao acordar: (opcional) sair de deep-sleep “lógico”
+    // LL_LPM_EnableSleep();
+
+    // Restaura o clock e o SysTick
+    SystemClock_Config();  // HSI + divisores + HAL_InitTick
+    // Reinit apenas o que você desligou
+    MX_ADC1_Init();
+    MX_USART1_UART_Init();
+    ADC_Init();
 }
 
 
@@ -646,7 +681,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
    ADC_Init();
 
-   printf("\n\r###START##SAMPLE:%02d MINUTE\n\r",SLEEP_TIME);
+   printf("\n\r###START##SAMPLE EACH %02d MINUTE, %03d SAMPLES\n\r",SLEEP_TIME,QUEUE_SIZE);
   /*
 
   if(PRINT_MODE)printf("\n\r\n\r<MEMORY>\n\r");
@@ -701,10 +736,16 @@ int main(void)
 	printf("T:");print_float_1dec(item.temp);
 	printf(" ");print_float_1dec(item.vdda_real);printf("V\n\r");
 	qty_of_samples++;
-     Enter_Stop_Mode();
+     if(!FAST_TEST_MODE)Enter_Stop_Mode();
      button_pressed_test();
-     it_ready=ON;
-     //LL_mDelay(1000);
+     /* clear bounce before rearm */
+     if (it_ready==OFF){
+      LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12);
+      NVIC_ClearPendingIRQ(EXTI4_15_IRQn);
+      LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_12);
+      it_ready=ON;
+     }
+     if(FAST_TEST_MODE)LL_mDelay(1000);
      RTC_Set_Alarm();
 
 
