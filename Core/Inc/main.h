@@ -158,7 +158,7 @@ typedef struct sensor_item_ {
   float vdda_real;
 } sensor_item;
 
-#define  FAST_TEST_MODE ON
+#define  FAST_TEST_MODE OFF
 
 typedef struct queue_item_ {
   float temp;
