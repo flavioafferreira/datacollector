@@ -166,11 +166,11 @@ typedef struct queue_item_ {
   time_struct timestamp;
 } queue_item;
 
-#define SLEEP_TIME 1  //how many minutes between measures
+#define SLEEP_TIME 10  //how many minutes between measures
 #define ANO_INITIAL 25
 #define DIA_INITIAL 1
 #define MES_INITIAL 1
-#define HOUR_INITIAL 12
+#define HOUR_INITIAL 00
 #define MINUTE_INITIAL 00
 
 #define QUEUE_SIZE 240  // Tamanho máximo da fila, don't change it
