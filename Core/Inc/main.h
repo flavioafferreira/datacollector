@@ -93,9 +93,14 @@ void Error_Handler(void);
 #define RESISTOR_VALUE 20000 	//RESISTOR VALUE IN OHMS
 #define NTC_TEMPERATURE_ADJUST 0 	//
 
-
-#define FATOR_A_NTC 1.18
-#define FATOR_B_NTC 1.93
+//Calibrate with two temperature points ex.0C and 96C
+//P1 (T_REAL_0,T_MEASURED_0)
+//P2 (T_REAL_1,T_MEASURED_1)
+//FATOR_A_NTC=(T_REAL_1-T_REAL_0)/(T_MEASURED_1-T_MEASURED_0)
+//FATOR_B_NTC=T_MEASURED_0-FATOR_A_NTC*T_REAL_0
+//REAL_TEMPERATURE = FATOR_A_NTC * READ_TEMPERATURE + FATOR_B_NTC
+#define FATOR_A_NTC  1.1375
+#define FATOR_B_NTC  0.222
 
 
 //#define IMPULSE_LIMIT 75 // 50 cycles/sec  75 = 1.5sec
