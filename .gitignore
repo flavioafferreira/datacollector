@@ -4,6 +4,11 @@
 /build/
 /out/
 
+# STM32CubeIDE: configs voláteis
+.settings/language.settings.xml
+.settings/stm32cubeide.project.prefs
+.settings/*.prefs
+
 # binários/artefatos de link
 *.elf
 *.map
@@ -30,3 +35,4 @@
 # SO
 .DS_Store
 Thumbs.db
+
