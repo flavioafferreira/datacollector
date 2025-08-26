@@ -137,39 +137,39 @@ uint32_t minutos_atual=0;
 //redirect the printf to usart1
 int _write(int file, char *ptr, int len) {
     for (int i = 0; i < len; i++) {
-        while (!LL_USART_IsActiveFlag_TXE(USART1));  // Espera o buffer ficar vazio
-        LL_USART_TransmitData8(USART1, ptr[i]);  // Envia um caractere
+        while (!LL_USART_IsActiveFlag_TXE(USART1));  // Wait for the buffer to be empty
+        LL_USART_TransmitData8(USART1, ptr[i]);  // Send a character
     }
-    while (!LL_USART_IsActiveFlag_TC(USART1));  // Espera a transmissão terminar
+    while (!LL_USART_IsActiveFlag_TC(USART1));  // Wait for the transmission to finish
     return len;
 }
 
 
 
 void print_float(float number) {
-    int32_t mantissa = (int32_t)number;  // Parte inteira
+    int32_t mantissa = (int32_t)number;  // Integer part
     float intermediate = number - mantissa;
-    int32_t expoente = (int32_t)(intermediate * 100000); // Parte decimal (5 casas)
+    int32_t expoente = (int32_t)(intermediate * 100000); // Decimal part (5 digits)
 
-    // Garantir que expoente seja positivo
+    // Ensure the exponent is positive
     if (expoente < 0) expoente *= -1;
 
-    // Impressão correta garantindo 5 dígitos no decimal
+    // Correct printing ensuring 5 digits in the decimal part
     printf("%ld.%05ld", mantissa, expoente);
 }
 
 void print_float_1dec(float number) {
-    int32_t mantissa = (int32_t)number;  // Parte inteira
+    int32_t mantissa = (int32_t)number;  // Integer part
     float intermediate = number - mantissa;
-    int32_t expoente = (int32_t)(intermediate * 100000); // Parte decimal (5 casas)
+    int32_t expoente = (int32_t)(intermediate * 100000); // Decimal part (5 digits)
 
-    // Garantir que expoente seja positivo
+    // Ensure the exponent is positive
     if (expoente < 0) expoente *= -1;
 
     while (expoente >= 10) {
     	expoente /= 10;
         }
-    // Impressão correta garantindo com 1 dígito
+    // Correct printing ensuring 1 digit
     printf("%ld.%ld", mantissa, expoente);
 }
 
@@ -202,15 +202,15 @@ float trimmed_mean(float* data, int n, float trim_percentage) {
 
 void ADC_Init(void)
 {
-    // Habilita o sensor de temperatura e VrefInt
+    // Enable temperature sensor and VrefInt
     LL_ADC_SetCommonPathInternalCh(ADC1_COMMON, LL_ADC_PATH_INTERNAL_TEMPSENSOR | LL_ADC_PATH_INTERNAL_VREFINT);
 
-    // Configuração do ADC
+    // ADC configuration
     LL_ADC_SetResolution(ADC1, LL_ADC_RESOLUTION_12B);
     LL_ADC_SetDataAlignment(ADC1, LL_ADC_DATA_ALIGN_RIGHT);
     LL_ADC_SetLowPowerMode(ADC1, LL_ADC_LP_MODE_NONE);
 
-    // Configura a sequência de canais: Temperatura (RANK 1) e VrefInt (RANK 2)
+    // Configure channel sequence: Temperature (RANK 1) and VrefInt (RANK 2)
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_TEMPSENSOR);
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_2, LL_ADC_CHANNEL_VREFINT);
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3, LL_ADC_CHANNEL_VDDA);
@@ -218,42 +218,42 @@ void ADC_Init(void)
 
     LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_FORWARD);
 
-    // Configura tempos de amostragem para maior precisão
+    // Set sampling times for higher accuracy
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_160CYCLES_5);
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SAMPLINGTIME_160CYCLES_5);
 
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VDDA, LL_ADC_SAMPLINGTIME_160CYCLES_5);
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_8, LL_ADC_SAMPLINGTIME_160CYCLES_5);
 
-    // Habilita o ADC
+    // Enable the ADC
     LL_ADC_Enable(ADC1);
 
-    // Aguarda estabilização
+    // Wait for stabilization
     while (!LL_ADC_IsActiveFlag_ADRDY(ADC1));
 }
 
 void ADC_Read_Temperature_And_Vref(uint16_t *temp_raw, uint16_t *vref_raw, uint16_t *vdda_raw, uint16_t *ch8_raw)
 {
-    // Inicia a conversão
+    // Start conversion
     LL_ADC_REG_StartConversion(ADC1);
 
-    // Aguarda a conversão do primeiro canal (Temperatura)
+    // Wait for the conversion of the first channel (Temperature)
     while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *temp_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Lê o primeiro valor (Temperatura)
+    *temp_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the first value (Temperature)
 
-    // Aguarda a conversão do segundo canal (VrefInt)
+    // Wait for the conversion of the second channel (VrefInt)
     while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *vref_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Lê o segundo valor
-
-    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *vdda_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Lê o terceiro valor
+    *vref_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the second value
 
     while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *ch8_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Lê o quarto valor
+    *vdda_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the third value
+
+    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
+    *ch8_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the fourth value
 
 
 
-    // Limpa a flag de fim de sequência para a próxima leitura
+    // Clear end-of-sequence flag for the next read
      LL_ADC_ClearFlag_EOS(ADC1);
 
      LL_ADC_REG_StopConversion(ADC1);
@@ -261,20 +261,20 @@ void ADC_Read_Temperature_And_Vref(uint16_t *temp_raw, uint16_t *vref_raw, uint1
 
 
 float getTemperatureFromVoltage(float v_adc, float vdd) {
-    // Temperaturas em graus Celsius
+    // Temperatures in degrees Celsius
     static const float temps[] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50};
 
-    // Resistência típica do NTC de 10k para cada temperatura (Ω)
+    // Typical resistance of 10k NTC for each temperature (Ω)
     static const float r_ntc[] = {32650, 25200, 19560, 15300, 12100, 9600, 7700, 6200, 5000, 4050, 3300};
 
-    // Tensão esperada para cada ponto (calculada em tempo de execução apenas na 1ª chamada)
+    // Expected voltage for each point (computed at runtime only in the 1st call)
     float volts[11];
 
     for (int i = 0; i < 11; i++) {
             volts[i] = vdd * (r_ntc[i] / (r_ntc[i] + RESISTOR_VALUE));
     }
 
-    // Interpolação linear entre os dois pontos da tabela
+    // Linear interpolation between two points in the table
     for (int i = 0; i < 10; i++) {
         if (v_adc <= volts[i] && v_adc >= volts[i + 1]) {
             float t = temps[i];
@@ -285,7 +285,7 @@ float getTemperatureFromVoltage(float v_adc, float vdd) {
         }
     }
 
-    // Fora da faixa — opcional: extrapolação ou retorno de erro
+    // Out of range — optional: extrapolation or return error
     return -100.0f;
 }
 
@@ -325,8 +325,8 @@ sensor_item Get_Temperature(void)
 	//vdda_real= VOLTAGE_ERROR_ADJUST+ (VREF_VOLTAGE_CALIBRATION * (*VREFINT_CAL_ADDR)) / (float)vref_raw;  //resultado em Volts
 
 	vdda_real = VOLTAGE_ERROR_ADJUST +( (VREF_VOLTAGE_CALIBRATION * (float)(*VREFINT_CAL_ADDR)) / (float)vref_raw);
-    V_Cal_30 = (float)TS_CAL_30 * (VREF_VOLTAGE_CALIBRATION / 4095.0f);  //quantos volts o sensor estava a 30 graus com VDDA a 3.3V com erro de + ou - 5graus
-    V_Temp   = (float)temp_raw *  (vdda_real / 4095.0f);  //quantos volts o sensor esta marcando realmente
+    V_Cal_30 = (float)TS_CAL_30 * (VREF_VOLTAGE_CALIBRATION / 4095.0f);  //how many volts the sensor had at 30 degrees with VDDA at 3.3V with an error of ±5 degrees
+    V_Temp   = (float)temp_raw *  (vdda_real / 4095.0f);  //how many volts the sensor is actually reading
     V_Ad8     = (float)ch8_raw *  (vdda_real / 4095.0f);
     Internal_Temperature = ((V_Temp -V_Cal_30) / AVG_SLOPE)+TEMPERATURE_CALIBRATION;
     Internal_Temperature = Internal_Temperature - (FATOR_A * vdda_real + FATOR_B);
@@ -349,7 +349,7 @@ sensor_item Get_Temperature(void)
     data.temp=Temperature;
     data.vdda_real=vdda_real;
 
-    return data;  // Retorna a temperatura inteira em °C
+    return data;  // Returns the integer temperature in °C
 
 }
 
@@ -361,10 +361,10 @@ HAL_StatusTypeDef Flash_Write(flash_st *data,uint8_t page_number)
     uint32_t PageError = 0;
     uint32_t flashAddress = (page_number * FLASH_PAGE_SIZE)+0x08000000; //2kbytes/page
 
-    // Destrava a Flash
+    // Unlock the Flash
     HAL_FLASH_Unlock();
 
-    // Configuração para apagar a página onde os dados serão gravados
+    // Configuration to erase the page where data will be written
     eraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
     eraseInitStruct.Page = 14;
     eraseInitStruct.NbPages = 1;
@@ -376,7 +376,7 @@ HAL_StatusTypeDef Flash_Write(flash_st *data,uint8_t page_number)
         return status;
     }
 
-    // Escreve a estrutura inteira, 8 bytes por vez
+    // Write the entire structure, 8 bytes at a time
     uint64_t *data_ptr = (uint64_t *)data;
     for (uint32_t i = 0; i < sizeof(flash_st) / sizeof(uint64_t); i++)
     {
@@ -389,7 +389,7 @@ HAL_StatusTypeDef Flash_Write(flash_st *data,uint8_t page_number)
         flashAddress += sizeof(uint64_t);
     }
 
-    // Trava a Flash novamente
+    // Lock the Flash again
     HAL_FLASH_Lock();
 
     return HAL_OK;
@@ -400,7 +400,7 @@ HAL_StatusTypeDef Flash_Erase(uint8_t page_number,uint8_t qty_pages){
     FLASH_EraseInitTypeDef eraseInitStruct;
     uint32_t PageError = 0;
 
-    // Desbloqueia a memória flash para acesso de gravação
+    // Unlock the flash memory for write access
     HAL_FLASH_Unlock();
 
     eraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
@@ -408,7 +408,7 @@ HAL_StatusTypeDef Flash_Erase(uint8_t page_number,uint8_t qty_pages){
     //FLASH_PAGE_NB
     eraseInitStruct.Page = page_number;
 
-    // Apaga a página da flash
+    // Erase the flash page
     status = HAL_FLASHEx_Erase(&eraseInitStruct, &PageError);
     if (status != HAL_OK)
     {
@@ -417,7 +417,7 @@ HAL_StatusTypeDef Flash_Erase(uint8_t page_number,uint8_t qty_pages){
     }
 
 
-    // Bloqueia a memória flash após a gravação
+    // Lock the flash memory after writing
     HAL_FLASH_Lock();
 
     return HAL_OK;
@@ -472,7 +472,7 @@ int enqueue_FIFO(fifo_queue *q, queue_item item)
 {
     if (q->count == QUEUE_SIZE)
     {
-        // Fila cheia
+        // Queue full
         return -1;
     }
 
@@ -480,25 +480,25 @@ int enqueue_FIFO(fifo_queue *q, queue_item item)
     q->tail = (q->tail + 1) % QUEUE_SIZE;
     q->count++;
 
-    return 0; // Sucesso
+    return 0; // Success
 }
 
 
-//fila circular com sobrescrição
+//circular queue with overwrite
 int enqueue(fifo_queue *q, queue_item item)
 {
     if (q->count == QUEUE_SIZE)
     {
-        // Fila cheia: descarta o mais antigo (head)
+        // Queue full: discard the oldest (head)
         q->head = (q->head + 1) % QUEUE_SIZE;
-        q->count--; // já que vamos inserir um novo, decrementamos antes
+        q->count--; // since we are going to insert a new one, we decrement first
     }
 
     q->buffer[q->tail] = item;
     q->tail = (q->tail + 1) % QUEUE_SIZE;
     q->count++;
 
-    return 0; // Sucesso
+    return 0; // Success
 }
 
 
@@ -507,7 +507,7 @@ int dequeue(fifo_queue *q, queue_item *item)
 {
     if (q->count == 0)
     {
-        // Fila vazia
+        // Queue empty
         return -1;
     }
 
@@ -515,7 +515,7 @@ int dequeue(fifo_queue *q, queue_item *item)
     q->head = (q->head + 1) % QUEUE_SIZE;
     q->count--;
 
-    return 0; // Sucesso
+    return 0; // Success
 }
 int is_empty(fifo_queue *q)
 {
@@ -529,14 +529,14 @@ int is_full(fifo_queue *q)
 
 void Ler_Tempo_RTC(uint8_t* horas, uint8_t* minutos)
 {
-    // Certifique-se de que está acessando corretamente (em RTC read sequence)
+    // Make sure you are accessing correctly (in RTC read sequence)
     LL_RTC_DisableWriteProtection(RTC);
 
-    // Leitura dos valores em BCD
+    // Read the values in BCD
     uint8_t bcd_horas   = LL_RTC_TIME_GetHour(RTC);
     uint8_t bcd_minutos = LL_RTC_TIME_GetMinute(RTC);
 
-    // Converte para decimal (BIN)
+    // Convert to decimal (BIN)
     *horas   = __LL_RTC_CONVERT_BCD2BIN(bcd_horas);
     *minutos = __LL_RTC_CONVERT_BCD2BIN(bcd_minutos);
 
@@ -549,7 +549,7 @@ void button_pressed_test(void){
     //if press the button, print the queue
 	if (print_memory==ON){
 	   	print_memory=OFF;
-		SystemClock_Config(); // Precisa restaurar HSI + PLL se for o caso
+		SystemClock_Config(); // Need to restore HSI + PLL if needed
 		printf("Queue:\n\r");
     	while (dequeue(&q, &item) == 0) {
 
@@ -580,7 +580,7 @@ void button_pressed_test(void){
 
 void Enter_Stop_Mode_old(void)
 {
-    // Desliga SysTick (opcional se não usar)
+    // Turn off SysTick (optional if not used)
     SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 
     LL_USART_Disable(USART1);
@@ -589,14 +589,14 @@ void Enter_Stop_Mode_old(void)
 
 
 
-    // Configura entrada no modo STOP
+    // Configure entry into STOP mode
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
     LL_LPM_EnableDeepSleep(); // SLEEPDEEP = 1
 
-    __WFI();  // Entra no modo STOP (espera por interrupção)
+    __WFI();  // Enter STOP mode (wait for interrupt)
 
-    // Ao acordar, reconfigure clock se necessário
-    SystemClock_Config(); // Precisa restaurar HSI + PLL se for o caso
+    // Upon wake-up, reconfigure clock if necessary
+    SystemClock_Config(); // Need to restore HSI + PLL if needed
 
     MX_ADC1_Init();
     MX_USART1_UART_Init();
@@ -607,32 +607,32 @@ void Enter_Stop_Mode_old(void)
 
 void Enter_Stop_Mode(void)
 {
-    // garantir UART ociosa
+    // ensure idle UART
     while (!LL_USART_IsActiveFlag_TC(USART1)) {}
 
-    // Desliga SysTick (se não usa delays HAL enquanto dorme)
+    // Turn off SysTick (if HAL delays are not used while sleeping)
     SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 
-    // Desliga periféricos que você vai reinicializar depois
+    // Turn off peripherals that you will reinitialize later
     LL_USART_Disable(USART1);
     LL_ADC_Disable(ADC1);
     LL_DBGMCU_DisableDBGStopMode();
 
-    // LIMPA quaisquer pendências que acordariam imediatamente
-    LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12); // botão
+    // CLEAR any pending flags that would wake up immediately
+    LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12); // button
     LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_19); // RTC ALARM
 
-    // Entra em STOP0
+    // Enter STOP0
     LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
     LL_LPM_EnableDeepSleep();
     __WFI();
 
-    // Ao acordar: (opcional) sair de deep-sleep “lógico”
+    // Upon waking: (optional) exit 'logical' deep sleep
     // LL_LPM_EnableSleep();
 
-    // Restaura o clock e o SysTick
+    // Restore the clock and SysTick
     SystemClock_Config();  // HSI + divisores + HAL_InitTick
-    // Reinit apenas o que você desligou
+    // Reinit only what you turned off
     MX_ADC1_Init();
     MX_USART1_UART_Init();
     ADC_Init();

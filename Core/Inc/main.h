@@ -93,7 +93,6 @@ void Error_Handler(void);
 
 #define RECHARGE_START 3000 		//START CHARGE MS
 #define TEMPERATURE_DEFAULT 26.0f		//26 CELSIUS DEGREE
-#define RECHARGE_DEFAULT 10 		//RECHARGE COUNT
 #define RECHARGE_PERIOD 25 		//RECHARGE PERIOD MS
 #define RECHARGE_CYCLE_DELAY 100 	//DELAY MS
 #define RECHARGE_CYCLE_DELAY_BEFORE 150 	//DELAY MS
@@ -135,7 +134,7 @@ typedef struct relay_ {
 
 
 #define INITIAL_PAGE 14 //PAGE 14 = ADDRESS 0X8007000
-#define PERIOD 3 //MINUTOS
+#define PERIOD 3 //MINUTES
 #define QUANT_REGISTRY 2 //QUANTITY OF MEASURES TO SAVE, MAX 128 =512BYTES
 typedef struct __attribute__((packed, aligned(8))) {
       float temp[QUANT_REGISTRY];
@@ -173,12 +172,12 @@ typedef struct queue_item_ {
 #define HOUR_INITIAL 00
 #define MINUTE_INITIAL 00
 
-#define QUEUE_SIZE 240  // Tamanho máximo da fila, don't change it
+#define QUEUE_SIZE 240  // Maximum queue size, don't change it
 typedef struct {
-	queue_item buffer[QUEUE_SIZE]; // Array de elementos do tipo string_tcp
-    int head;                      // Índice do primeiro elemento da fila
-    int tail;                      // Índice do próximo elemento disponível
-    int count;                     // Número de elementos na fila
+	queue_item buffer[QUEUE_SIZE]; // Array of elements of type string_tcp
+    int head;                      // Index of the first element in the queue
+    int tail;                      // Index of the next available element
+    int count;                     // Number of elements in the queue
 } fifo_queue;
 
 
