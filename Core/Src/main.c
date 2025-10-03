@@ -62,7 +62,6 @@
 #include "main.h"
 #include "adc.h"
 #include "rtc.h"
-#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -676,9 +675,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_USART1_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  MX_USART1_UART_Init_New();
    ADC_Init();
 
    printf("\n\r###START##SAMPLE EACH %02d MINUTE, %03d SAMPLES\n\r",SLEEP_TIME,QUEUE_SIZE);

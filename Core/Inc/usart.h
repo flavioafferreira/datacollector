@@ -39,7 +39,7 @@ extern "C" {
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void MX_USART1_UART_Init_New(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
