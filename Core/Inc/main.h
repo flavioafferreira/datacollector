@@ -130,6 +130,16 @@ typedef struct relay_ {
 } relay_st;
 
 
+#define RX_BUFFER_SIZE 30
+#define QTY_CMD 5
+#define CMD_0 "mem"
+#define CMD_1 "debug"
+#define CMD_2 "reset"
+#define CMD_3 "nodebug"
+#define CMD_4 "update"
+#define CMD_DEFINITION {CMD_0,CMD_1,CMD_2,CMD_3,CMD_4} //exemplo, para mem retorna 0, debug retorna 1
+
+
 
 #define INITIAL_PAGE 14 //PAGE 14 = ADDRESS 0X8007000
 #define PERIOD 3 //MINUTES

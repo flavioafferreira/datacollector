@@ -72,7 +72,7 @@
 #include "stm32c0xx_ll_bus.h"
 #include "stm32c0xx_hal.h"
 #include "string.h"
-
+#include "usart.h"
 
 /* USER CODE END Includes */
 
@@ -114,6 +114,10 @@ uint8_t calibration_completed=OFF;
 uint32_t ext_cnt=0;
 volatile uint8_t print_memory=OFF;
 volatile uint8_t it_ready=ON;
+char *str_cmd[QTY_CMD] = CMD_DEFINITION;
+extern char rx_buffer[RX_BUFFER_SIZE];
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -141,6 +145,35 @@ int _write(int file, char *ptr, int len) {
     }
     while (!LL_USART_IsActiveFlag_TC(USART1));  // Wait for the transmission to finish
     return len;
+}
+
+
+void exec_cmd(uint8_t cmd){
+       switch(cmd){
+
+       case 0:
+    	   printf("CMD MEM\n\r");
+    	   break;
+       case 1:
+    	   break;
+       case 2:
+    	   //Init_flash_logging();
+    	   //Flash_EraseLogVariable(FLASH_PAGE_8,8);
+   		   //flash_variable.working_timestamp=0;
+   		   //flash_variable.index=0;
+   		   //Flash_WriteRelayVariable(&flash_variable,FLASH_USER_START_ADDR);
+    	   //printf("flash reseted\n\r");
+    	   break;
+       case 3:
+    	   break;
+       case 4:
+    	   //flash_logg_update();
+           //printf("force updated\n\r");
+    	   break;
+       default:
+
+       }
+
 }
 
 
@@ -638,6 +671,19 @@ void Enter_Stop_Mode(void)
 }
 
 
+void cmd_analise_task(void){
+	int result;
+        uint8_t i=0;
+		while (i<QTY_CMD){
+		 result = strcmp(str_cmd[i], rx_buffer);
+		 if (!result)exec_cmd(i);
+	     i++;
+		}
+
+}
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -734,6 +780,9 @@ int main(void)
 
 	printf("T:");print_float_1dec(item.temp);
 	printf(" ");print_float_1dec(item.vdda_real);printf("V\n\r");
+
+	cmd_analise_task(); //verify input commands
+
 	qty_of_samples++;
      if(!FAST_TEST_MODE)Enter_Stop_Mode();
      button_pressed_test();

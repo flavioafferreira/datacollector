@@ -22,6 +22,15 @@
 
 /* USER CODE BEGIN 0 */
 
+
+#include <string.h>
+
+
+char rx_buffer[RX_BUFFER_SIZE];
+char rx_buffer_intern[RX_BUFFER_SIZE];
+int rx_index = 0;
+
+
 /* USER CODE END 0 */
 
 /* USART1 init function */
@@ -93,6 +102,41 @@ void MX_USART1_UART_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+
+void usart1_interrupt_handler(void){
+    uint8_t data;
+
+    // Verificar se a interrupção é de recepção de dados (RXNE)
+    if (LL_USART_IsActiveFlag_RXNE(USART1))
+    {
+    	//marker(2);
+        // Ler o dado recebido
+        data = LL_USART_ReceiveData8(USART1);
+
+        // Armazenar o dado no buffer até o caractere '\n' ou até o buffer ficar cheio
+        if (data == '\n' || data == '\r' || rx_index >= RX_BUFFER_SIZE - 1)
+        {
+
+            rx_buffer_intern[rx_index] = '\0';  // Termina a string
+
+            memcpy(rx_buffer, rx_buffer_intern, rx_index + 1);
+            rx_index = 0;  // Resetar o índice para o próximo recebimento
+            //USAR O SEMAFORO xSemaphoreGive(xSemaphoreSerialRX);
+            //transferir o conteudo do buffer para outra variavel disponivel
+
+        }
+        else
+        {
+            rx_buffer_intern[rx_index++] = data;  // Armazenar o dado no buffer
+        }
+    }
+}
+
+
+
+
+
 void MX_USART1_UART_Init_New(void)
 {
 
@@ -142,6 +186,7 @@ void MX_USART1_UART_Init_New(void)
 
 
   LL_USART_Enable(USART1);
+  LL_USART_EnableIT_RXNE(USART1);
 
   /* Polling USART1 initialisation */
   while((!(LL_USART_IsActiveFlag_TEACK(USART1))) || (!(LL_USART_IsActiveFlag_REACK(USART1))))
