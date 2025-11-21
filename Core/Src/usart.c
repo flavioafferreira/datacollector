@@ -52,18 +52,30 @@ void MX_USART1_UART_Init(void)
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
 
   LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOC);
+  LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
   /**USART1 GPIO Configuration
   PC14-OSCX_IN (PC14)   ------> USART1_TX
+  PA8   ------> USART1_RX
   */
   GPIO_InitStruct.Pin = TX_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_0;
   LL_GPIO_Init(TX_GPIO_Port, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = RX_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
+  LL_GPIO_Init(RX_GPIO_Port, &GPIO_InitStruct);
+
   LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN1_PC14);
+
+  LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN5_PA8);
 
   /* USART1 interrupt Init */
   NVIC_SetPriority(USART1_IRQn, 0);
@@ -78,14 +90,17 @@ void MX_USART1_UART_Init(void)
   USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
   USART_InitStruct.Parity = LL_USART_PARITY_NONE;
   USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+  USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
   LL_USART_Init(USART1, &USART_InitStruct);
   LL_USART_SetTXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
   LL_USART_SetRXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
   LL_USART_DisableFIFO(USART1);
-  LL_USART_ConfigHalfDuplexMode(USART1);
+  LL_USART_ConfigAsyncMode(USART1);
 
   /* USER CODE BEGIN WKUPType USART1 */
+
+   //LL_USART_EnableIT_RXNE(USART1);
 
   /* USER CODE END WKUPType USART1 */
 
@@ -96,6 +111,7 @@ void MX_USART1_UART_Init(void)
   {
   }
   /* USER CODE BEGIN USART1_Init 2 */
+
 
   /* USER CODE END USART1_Init 2 */
 
@@ -155,17 +171,20 @@ void MX_USART1_UART_Init_New(void)
   GPIO_InitStruct.Alternate = LL_GPIO_AF_0;
   LL_GPIO_Init(TX_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_1;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN1_PC14);
 
-  LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN4_PA1);
+  GPIO_InitStruct.Pin = RX_Pin;
+   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+   GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
+   LL_GPIO_Init(RX_GPIO_Port, &GPIO_InitStruct);
+
+   LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN1_PC14);
+
+   LL_SYSCFG_ConfigPinMux(LL_PINMUX_SO8_PIN5_PA8);
+
 
   NVIC_SetPriority(USART1_IRQn, 0);
   NVIC_EnableIRQ(USART1_IRQn);

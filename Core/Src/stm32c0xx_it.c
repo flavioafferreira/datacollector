@@ -184,30 +184,6 @@ void FLASH_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles EXTI line 4 to 15 interrupts.
-  */
-void EXTI4_15_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI4_15_IRQn 0 */
-  if(it_ready==ON)
-  /* USER CODE END EXTI4_15_IRQn 0 */
-  if (LL_EXTI_IsActiveRisingFlag_0_31(LL_EXTI_LINE_12) != RESET)
-  {
-    LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_12);
-    /* USER CODE BEGIN LL_EXTI_LINE_12_RISING */
-    if (it_ready == ON){
-     LL_EXTI_DisableIT_0_31(LL_EXTI_LINE_12); // evita bounce/reentrância
-     print_memory=ON;
-     it_ready=OFF;
-    }
-    /* USER CODE END LL_EXTI_LINE_12_RISING */
-  }
-  /* USER CODE BEGIN EXTI4_15_IRQn 1 */
-
-  /* USER CODE END EXTI4_15_IRQn 1 */
-}
-
-/**
   * @brief This function handles ADC1 interrupt.
   */
 void ADC1_IRQHandler(void)

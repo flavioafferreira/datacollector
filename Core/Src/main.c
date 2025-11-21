@@ -107,7 +107,7 @@ uint32_t qty_of_samples=1;
 relay_st relay;
 relay_st relay_on_off(uint8_t control);
 uint8_t triac_zc_on=OFF;
-static uint16_t vref_raw,temp_raw,vdda_raw,ch8_raw;
+static uint16_t vref_raw,temp_raw,vdda_raw,ch12_raw;
 
 flash_st flash_variable;
 uint8_t calibration_completed=OFF;
@@ -237,6 +237,7 @@ void ADC_Init(void)
     // Enable temperature sensor and VrefInt
     LL_ADC_SetCommonPathInternalCh(ADC1_COMMON, LL_ADC_PATH_INTERNAL_TEMPSENSOR | LL_ADC_PATH_INTERNAL_VREFINT);
 
+
     // ADC configuration
     LL_ADC_SetResolution(ADC1, LL_ADC_RESOLUTION_12B);
     LL_ADC_SetDataAlignment(ADC1, LL_ADC_DATA_ALIGN_RIGHT);
@@ -246,16 +247,16 @@ void ADC_Init(void)
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_TEMPSENSOR);
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_2, LL_ADC_CHANNEL_VREFINT);
     LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3, LL_ADC_CHANNEL_VDDA);
-    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3, LL_ADC_CHANNEL_8);
+    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_4, LL_ADC_CHANNEL_12);
 
-    LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_FORWARD);
+    //LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_FORWARD);
 
     // Set sampling times for higher accuracy
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_160CYCLES_5);
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SAMPLINGTIME_160CYCLES_5);
-
     LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VDDA, LL_ADC_SAMPLINGTIME_160CYCLES_5);
-    LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_8, LL_ADC_SAMPLINGTIME_160CYCLES_5);
+    LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_12, LL_ADC_SAMPLINGTIME_160CYCLES_5);
+
 
     // Enable the ADC
     LL_ADC_Enable(ADC1);
@@ -264,32 +265,67 @@ void ADC_Init(void)
     while (!LL_ADC_IsActiveFlag_ADRDY(ADC1));
 }
 
-void ADC_Read_Temperature_And_Vref(uint16_t *temp_raw, uint16_t *vref_raw, uint16_t *vdda_raw, uint16_t *ch8_raw)
+
+static uint16_t ADC_ReadSingleChannel(uint32_t channel)
 {
-    // Start conversion
+    uint32_t timeout;
+
+    // garante ADC ligado
+    if (!LL_ADC_IsEnabled(ADC1)) {
+        LL_ADC_Enable(ADC1);
+        while (!LL_ADC_IsActiveFlag_ADRDY(ADC1));
+    }
+
+    // habilita canais internos quando necessário
+    if (channel == LL_ADC_CHANNEL_TEMPSENSOR ||
+        channel == LL_ADC_CHANNEL_VREFINT  ||
+        channel == LL_ADC_CHANNEL_VDDA)
+    {
+        LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1),
+            LL_ADC_PATH_INTERNAL_TEMPSENSOR |
+            LL_ADC_PATH_INTERNAL_VREFINT  );
+    }
+
+    // sequenciador com 1 rank só
+    LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_DISABLE);
+    LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, channel);
+
+    // espera CCRDY (igual CubeMX faz)
+    timeout = 100000;
+    while (!LL_ADC_IsActiveFlag_CCRDY(ADC1) && --timeout);
+    LL_ADC_ClearFlag_CCRDY(ADC1);
+
+    // limpa flags antigas
+    LL_ADC_ClearFlag_EOC(ADC1);
+    LL_ADC_ClearFlag_EOS(ADC1);
+    LL_ADC_ClearFlag_OVR(ADC1);
+
+    // start conversão
     LL_ADC_REG_StartConversion(ADC1);
 
-    // Wait for the conversion of the first channel (Temperature)
-    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *temp_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the first value (Temperature)
+    // espera fim da conversão (agora é 1 canal só, EOC vem sempre)
+    timeout = 1000000;
+    while (!LL_ADC_IsActiveFlag_EOC(ADC1) && --timeout);
+    if (timeout == 0) {
+        printf("ADC timeout ch=%lu ISR=0x%08lx\n\r", channel, ADC1->ISR);
+        return 0;
+    }
 
-    // Wait for the conversion of the second channel (VrefInt)
-    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *vref_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the second value
-
-    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *vdda_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the third value
-
-    while (!LL_ADC_IsActiveFlag_EOC(ADC1));
-    *ch8_raw = LL_ADC_REG_ReadConversionData12(ADC1); // Read the fourth value
-
-
-
-    // Clear end-of-sequence flag for the next read
-     LL_ADC_ClearFlag_EOS(ADC1);
-
-     LL_ADC_REG_StopConversion(ADC1);
+    return LL_ADC_REG_ReadConversionData12(ADC1);
 }
+
+void ADC_Read_Temperature_And_Vref(uint16_t *temp_raw,
+                                   uint16_t *vref_raw,
+                                   uint16_t *vdda_raw,
+                                   uint16_t *ch12_raw)
+{
+    *temp_raw = ADC_ReadSingleChannel(LL_ADC_CHANNEL_TEMPSENSOR);
+    *vref_raw = ADC_ReadSingleChannel(LL_ADC_CHANNEL_VREFINT);
+    *vdda_raw = ADC_ReadSingleChannel(LL_ADC_CHANNEL_VDDA);
+    *ch12_raw = ADC_ReadSingleChannel(LL_ADC_CHANNEL_12);
+}
+
+
 
 
 float getTemperatureFromVoltage(float v_adc, float vdd) {
@@ -343,13 +379,13 @@ sensor_item Get_Temperature(void)
 
 
 
-	float Temperature=0,Internal_Temperature=0, V_Temp=0,V_Cal_30=0,V_Ad8=0;
-	//static uint16_t vref_raw,temp_raw,vdda_raw,ch8_raw;
+	float Temperature=0,Internal_Temperature=0, V_Temp=0,V_Cal_30=0,V_Ad12=0;
+	//static uint16_t vref_raw,temp_raw,vdda_raw,ch12_raw;
     float vdda_real=0;
-	ADC_Read_Temperature_And_Vref(&temp_raw,&vref_raw,&vdda_raw,&ch8_raw);
+    ADC_Read_Temperature_And_Vref(&temp_raw,&vref_raw,&vdda_raw,&ch12_raw);
 
 #ifdef PRINT_A
-	printf("temp_raw: %d, ref_raw: %d, vdda_raw: %d, ch8_raw: %d\n\r", temp_raw, vref_raw,vdda_raw,ch8_raw);
+	printf("temp_raw: %d, ref_raw: %d, vdda_raw: %d, ch12_raw: %d\n\r", temp_raw, vref_raw,vdda_raw,ch12_raw);
     printf("VREFINT_CAL:%d\n\r",VREFINT_CAL);
     printf("TS_CAL_30:%d\n\r",TS_CAL_30);
 #endif
@@ -359,7 +395,7 @@ sensor_item Get_Temperature(void)
 	vdda_real = VOLTAGE_ERROR_ADJUST +( (VREF_VOLTAGE_CALIBRATION * (float)(*VREFINT_CAL_ADDR)) / (float)vref_raw);
     V_Cal_30 = (float)TS_CAL_30 * (VREF_VOLTAGE_CALIBRATION / 4095.0f);  //how many volts the sensor had at 30 degrees with VDDA at 3.3V with an error of ±5 degrees
     V_Temp   = (float)temp_raw *  (vdda_real / 4095.0f);  //how many volts the sensor is actually reading
-    V_Ad8     = (float)ch8_raw *  (vdda_real / 4095.0f);
+    V_Ad12     = (float)ch12_raw *  (vdda_real / 4095.0f);
     Internal_Temperature = ((V_Temp -V_Cal_30) / AVG_SLOPE)+TEMPERATURE_CALIBRATION;
     Internal_Temperature = Internal_Temperature - (FATOR_A * vdda_real + FATOR_B);
 
@@ -368,13 +404,13 @@ sensor_item Get_Temperature(void)
     printf("V_Cal_30:");print_float(V_Cal_30);printf("\n\r");
     printf("V_Temp:");print_float(V_Temp);printf("\n\r");
     printf("Internal_Temp:");print_float(Internal_Temperature);printf("\n\r");
-    printf("V_Ad8:");print_float(V_Ad8);printf("\n\r");
-    printf("T_NTC:");print_float(getTemperatureFromVoltage(V_Ad8,vdda_real));printf("\n\r");
+    printf("V_Ad12:");print_float(V_Ad12);printf("\n\r");
+    printf("T_NTC:");print_float(getTemperatureFromVoltage(V_Ad12,vdda_real));printf("\n\r");
 
 #endif
 
     //printf("T_NTC:");print_float(getTemperatureFromVoltage(V_Ad8,vdda_real));printf("\n\r");
-    Temperature=getTemperatureFromVoltage(V_Ad8,vdda_real)+NTC_TEMPERATURE_ADJUST; //from NTC
+    Temperature=getTemperatureFromVoltage(V_Ad12,vdda_real)+NTC_TEMPERATURE_ADJUST; //from NTC
     //deploy a factor to change the temperature using the vdda_real as parameter
     //print_float(Temperature);printf("\n\r");
 
@@ -724,7 +760,7 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   MX_USART1_UART_Init_New();
-   ADC_Init();
+  ADC_Init();
 
    printf("\n\r###START##SAMPLE EACH %02d MINUTE, %03d SAMPLES\n\r",SLEEP_TIME,QUEUE_SIZE);
   /*
@@ -755,6 +791,7 @@ int main(void)
 	Pin_Config_NTC_Alim();
 	LL_GPIO_SetOutputPin(alim_ntc_GPIO_Port, alim_ntc_Pin);
 	data=temperature_level_control();
+
 	item.temp=data.temp;
 	item.vdda_real=data.vdda_real;
 	LL_GPIO_ResetOutputPin(alim_ntc_GPIO_Port, alim_ntc_Pin);
@@ -767,7 +804,6 @@ int main(void)
 	item.timestamp.bcd_minutos=LL_RTC_TIME_GetMinute(RTC);
 	item.timestamp.bcd_seconds=LL_RTC_TIME_GetSecond(RTC);
 	enqueue(&q, item);
-
 
 	printf("%06ld %02d/%02d/%02d %02d:%02d:%02d ",qty_of_samples,
 	       __LL_RTC_CONVERT_BCD2BIN(item.timestamp.bcd_dia),

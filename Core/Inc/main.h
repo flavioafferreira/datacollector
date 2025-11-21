@@ -78,11 +78,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define TX_Pin LL_GPIO_PIN_14
 #define TX_GPIO_Port GPIOC
-#define ntc_Pin LL_GPIO_PIN_8
+#define RX_Pin LL_GPIO_PIN_8
+#define RX_GPIO_Port GPIOA
+#define ntc_Pin LL_GPIO_PIN_12
 #define ntc_GPIO_Port GPIOA
-#define memory_print_Pin LL_GPIO_PIN_12
-#define memory_print_GPIO_Port GPIOA
-#define memory_print_EXTI_IRQn EXTI4_15_IRQn
 #define alim_ntc_Pin LL_GPIO_PIN_13
 #define alim_ntc_GPIO_Port GPIOA
 
@@ -165,7 +164,7 @@ typedef struct sensor_item_ {
   float vdda_real;
 } sensor_item;
 
-#define  FAST_TEST_MODE OFF
+#define  FAST_TEST_MODE ON
 
 typedef struct queue_item_ {
   float temp;
